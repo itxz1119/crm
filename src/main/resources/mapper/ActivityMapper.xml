@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bjpowernode.crm.workbench.mapper.ActivityMapper">
+
+    <resultMap id="BaseResultMap" type="com.bjpowernode.crm.workbench.entity.Activity">
+        <id property="id" column="id" jdbcType="CHAR"/>
+        <result property="owner" column="owner" jdbcType="CHAR"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="startDate" column="start_date" jdbcType="CHAR"/>
+        <result property="endDate" column="end_date" jdbcType="CHAR"/>
+        <result property="cost" column="cost" jdbcType="VARCHAR"/>
+        <result property="description" column="description" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="CHAR"/>
+        <result property="createBy" column="create_by" jdbcType="VARCHAR"/>
+        <result property="editTime" column="edit_time" jdbcType="CHAR"/>
+        <result property="editBy" column="edit_by" jdbcType="VARCHAR"/>
+        <result property="ownerName" column="owner_name" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,owner,name,
+        start_date,end_date,cost,
+        description,create_time,create_by,
+        edit_time,edit_by
+    </sql>
+
+    <select id="selectByPrimaryKey" resultMap="BaseResultMap">
+        select a.id,
+               a.owner,
+               a.name,
+               a.start_date,
+               a.end_date,
+               a.cost,
+               a.description,
+               a.create_time,
+               a.create_by,
+               a.edit_time,
+               a.edit_by,
+               u.name owner_name
+        from tbl_activity a
+                 join tbl_user u on a.owner = u.id
+        where a.id = #{id}
+    </select>
+
+    <select id="select" resultMap="BaseResultMap">
+        select a.id,
+        a.owner,
+        a.name,
+        a.start_date,
+        a.end_date,
+        a.cost,
+        a.description,
+        a.create_time,
+        a.create_by,
+        a.edit_time,
+        a.edit_by,
+        u.name owner_name
+        from tbl_activity a
+        join tbl_user u on a.owner = u.id
+        <where>
+            <if test="name != null and name != ''">
+                and a.name like '%' #{name} '%'
+            </if>
+            <if test="owner != null and owner != ''">
+                and a.owner = #{owner}
+            </if>
+        </where>
+    </select>
+
+    <delete id="deleteByPrimaryKey">
+        delete
+        from tbl_activity
+        where id = #{id,jdbcType=CHAR}
+    </delete>
+
+    <insert id="insert" keyColumn="id" keyProperty="id" parameterType="com.bjpowernode.crm.workbench.entity.Activity">
+        insert into tbl_activity
+        ( id, owner, name
+        , start_date, end_date, cost
+        , description, create_time, create_by
+        , edit_time, edit_by)
+        values ( #{id,jdbcType=CHAR}, #{owner,jdbcType=CHAR}, #{name,jdbcType=VARCHAR}
+               , #{startDate,jdbcType=CHAR}, #{endDate,jdbcType=CHAR}, #{cost,jdbcType=VARCHAR}
+               , #{description,jdbcType=VARCHAR}, #{createTime,jdbcType=CHAR}, #{createBy,jdbcType=VARCHAR}
+               , #{editTime,jdbcType=CHAR}, #{editBy,jdbcType=VARCHAR})
+    </insert>
+
+    <update id="updateByPrimaryKeySelective" parameterType="com.bjpowernode.crm.workbench.entity.Activity">
+        update tbl_activity
+        <set>
+            <if test="owner != null">
+                owner = #{owner,jdbcType=CHAR},
+            </if>
+            <if test="name != null">
+                name = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="startDate != null">
+                start_date = #{startDate,jdbcType=CHAR},
+            </if>
+            <if test="endDate != null">
+                end_date = #{endDate,jdbcType=CHAR},
+            </if>
+            <if test="cost != null">
+                cost = #{cost,jdbcType=VARCHAR},
+            </if>
+            <if test="description != null">
+                description = #{description,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null">
+                create_time = #{createTime,jdbcType=CHAR},
+            </if>
+            <if test="createBy != null">
+                create_by = #{createBy,jdbcType=VARCHAR},
+            </if>
+            <if test="editTime != null">
+                edit_time = #{editTime,jdbcType=CHAR},
+            </if>
+            <if test="editBy != null">
+                edit_by = #{editBy,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where id = #{id,jdbcType=CHAR}
+    </update>
+
+</mapper>

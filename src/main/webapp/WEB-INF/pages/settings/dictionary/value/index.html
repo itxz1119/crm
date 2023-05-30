@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <base th:href="${#request.getContextPath()} + '/'">
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="static/bootstrap/css/bootstrap.min.css">
+    <!--bootstrapTable核心样式-->
+    <link rel="stylesheet" href="static/bootstrap-table/bootstrap-table.min.css">
+</head>
+<body>
+<!--路径导航-->
+<ol class="breadcrumb">
+    <li>设置</li>
+    <li>字典类型列表</li>
+
+</ol>
+<div class="panel-body">
+    <!--查询条件-->
+    <form id="searchForm" class="form-inline">
+        <div class="form-group">
+            <input type="text" placeholder="文本" id="text" class="form-control">
+        </div>
+        <div class="form-group">
+            <select id="typeCode" class="form-control typeCodeSelect">
+            </select>
+        </div>
+        <div class="form-group">
+            <button type="button" class="btn btn-default" onclick="$('#tab').bootstrapTable('refresh');">搜索</button>
+            <button type="button" class="btn btn-default"
+                    onclick="$('#searchForm')[0].reset();$('#tab').bootstrapTable('refresh');">清空
+            </button>
+        </div>
+        <div class="form-group">
+            <button type="button" class="btn btn-primary" onclick="$('#saveModal').modal('show');">新增</button>
+            <button type="button" class="btn btn-danger" onclick="removeBatch()">批量删除</button>
+        </div>
+    </form>
+
+    <table id="tab" class="table table-hover table-striped table-bordered"></table>
+</div>
+
+<!--创建用户的模态窗口-->
+<div class="modal fade" id="saveModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title">字典值新增</h4>
+            </div>
+            <div class="modal-body">
+                <form id="saveForm" class="form-horizontal">
+                    <div class="form-group">
+                        <label class="col-md-2 control-label">字典类型</label>
+                        <div class="col-md-10">
+                            <select id="save-typeCode" class="form-control typeCodeSelect">
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-md-2 control-label">字典值</label>
+                        <div class="col-md-10">
+                            <input type="text" id="save-value" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-md-2 control-label">文本</label>
+                        <div class="col-md-10">
+                            <input type="text" id="save-text" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-md-2 control-label">排序号</label>
+                        <div class="col-md-10">
+                            <input type="text" id="save-orderNo" class="form-control">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="save()">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!--修改用户模态框-->
+<div class="modal fade" id="editModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title">字典值编辑</h4>
+            </div>
+            <div class="modal-body">
+                <form id="editForm" class="form-horizontal">
+                    <input type="hidden" id="edit-id">
+                    <div class="form-group">
+                        <label class="col-md-2 control-label">字典类型</label>
+                        <div class="col-md-10">
+                            <select id="edit-typeCode" class="form-control typeCodeSelect">
+
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-md-2 control-label">字典值</label>
+                        <div class="col-md-10">
+                            <input type="text" id="edit-value" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-md-2 control-label">文本</label>
+                        <div class="col-md-10">
+                            <input type="text" id="edit-text" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-md-2 control-label">排序号</label>
+                        <div class="col-md-10">
+                            <input type="text" id="edit-orderNo" class="form-control">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="edit()">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="static/js/jquery.js"></script>
+<script type="text/javascript" src="static/bootstrap/js/bootstrap.min.js"></script>
+<!--bootstrapTable核心js-->
+<script type="text/javascript" src="static/bootstrap-table/bootstrap-table.min.js"></script>
+<!--bootstrapTable中文语言包-->
+<script type="text/javascript" src="static/bootstrap-table/locale/bootstrap-table-zh-CN.min.js"></script>
+<!--日期组件-->
+<script type="text/javascript" src="static/bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js"></script>
+<script>
+    $(function () {
+        initTable();
+    })
+
+    function initTable() {
+        $('#tab').bootstrapTable({
+            method: 'get',
+            url: 'dicValue/page',
+            responseHandler: function (res) {
+                console.log(res)
+                if (res.code == 200) {
+                    let dicTypeList = res.data.dicTypeList;
+                    var op = '<option></option>'
+                    for (let i = 0; i < dicTypeList.length; i++) {
+                        op += '<option value="' + dicTypeList[i].code + '">' + dicTypeList[i].name + '</option>'
+                    }
+                    $(".typeCodeSelect").html(op)
+                    return {
+                        rows: res.data.list,
+                        total: res.data.total
+                    }
+                }
+                return [];
+            },
+            pagination: true,
+            sidePagination: 'server',
+            pageSize: 5,
+            pageList: [5, 10, 20, 50],
+            paginationPreText: '上一页',
+            paginationNextText: '下一页',
+            //查询参数配置
+            queryParamsType: '',
+            queryParams: function (params) {
+                params.text = $('#text').val();
+                params.typeCode = $('#typeCode').val();
+                return params;
+            },
+            clickToSelect: true,
+            showRefresh: true,
+            showToggle: true,
+            showFullscreen: true,
+            toolbar: '#searchForm',
+            columns: [
+                {checkbox: true},
+                {field: 'id', visible: false},
+                {
+                    title: '序号', halign: 'center', formatter: function (value, row, index) {
+                        return index + 1;
+                    }
+                },
+                {title: '字典值', field: 'value', halign: 'center'},
+                {title: '文本', field: 'text', halign: 'center'},
+                {title: '排序号', field: 'orderNo', halign: 'center'},
+                {title: '字典类型编码', field: 'typeCode', halign: 'center'},
+                {title: '字典类型名称', field: 'name', halign: 'center'},
+                {
+                    title: '操作', halign: 'center', align: 'center', formatter: function (value, row) {
+                        return '<button type="button" class="btn btn-warning btn-xs" onclick="get(\'' + row.id + '\')" title="编辑"><span class="glyphicon glyphicon-edit"></span></button>&emsp;' +
+                            '<button type="button" class="btn btn-danger btn-xs" onclick="remove(\'' + row.id + '\')" title="删除"><span class="glyphicon glyphicon-trash"></span></button>';
+                    }
+                }
+            ]
+        });
+    }
+
+    function save() {
+        $.ajax('dicValue/save', {
+            type: 'post',
+            contentType: 'application/json',
+            beforeSend: function () {
+                //数据校验
+                var typeCode = $('#save-typeCode').val();
+                var value = $('#save-value').val();
+                var text = $('#save-text').val();
+                if (!typeCode) {
+                    alert('请选择字典类型');
+                    return false;
+                }
+                if (!value) {
+                    alert('字典值不能空');
+                    return false;
+                }
+                if (!text) {
+                    alert('文本不能空');
+                    return false;
+                }
+            },
+            data: JSON.stringify({
+                typeCode: $('#save-typeCode').val(),
+                value: $('#save-value').val(),
+                text: $('#save-text').val(),
+                orderNo: $('#save-orderNo').val()
+            }),
+            success: function (res) {
+                if (res.code == 200) {
+                    alert('新增成功');
+                    $('#saveModal').modal('hide');
+                    $('#tab').bootstrapTable('refresh');
+                } else {
+                    alert(res.message);
+                }
+            }
+        });
+    }
+
+    function get(id){
+        $.ajax('dicValue/get/'+id, {
+            type: 'get',
+            success: function (res){
+                console.log(res)
+                if(res.code == 200){
+                    $('#edit-id').val(res.data.id);
+                    $('#edit-value').val(res.data.value);
+                    $('#edit-text').val(res.data.text);
+                    $('#edit-orderNo').val(res.data.orderNo);
+                    $('#edit-typeCode').val(res.data.typeCode);
+
+                    $('#editModal').modal('show');
+                }
+            }
+        });
+    }
+
+    function edit(){
+        $.ajax('dicValue/edit', {
+            type: 'put',
+            contentType: 'application/json',
+            beforeSend: function (){
+                //数据校验
+                var typeCode = $('#edit-typeCode').val();
+                var value = $('#edit-value').val();
+                var text = $('#edit-text').val();
+                if(!typeCode){
+                    alert('请选择字典类型');
+                    return false;
+                }
+                if(!value){
+                    alert('字典值不能空');
+                    return false;
+                }
+                if(!text){
+                    alert('文本不能空');
+                    return false;
+                }
+            },
+            data: JSON.stringify({
+                id: $('#edit-id').val(),
+                typeCode: $('#edit-typeCode').val(),
+                value: $('#edit-value').val(),
+                text: $('#edit-text').val(),
+                orderNo: $('#edit-orderNo').val()
+            }),
+            success: function (res){
+                if(res.code == 200){
+                    alert('编辑成功');
+                    $('#editModal').modal('hide');
+                    $('#tab').bootstrapTable('refresh');
+                }else{
+                    alert(res.message);
+                }
+            }
+        });
+    }
+
+    function remove(id) {
+        if (!confirm("确定删除吗?")) {
+            return
+        }
+        $.ajax('dicValue/remove/' + id, {
+            type: 'delete',
+            success: function (res) {
+                alert(res.message)
+                if (res.code == 200) {
+                    $("#tab").bootstrapTable('refresh')
+                }
+            }
+        })
+    }
+
+    function removeBatch() {
+        let data = $("#tab").bootstrapTable('getSelections')
+        if (data.length === 0) {
+            alert('请选择要删除的数据')
+            return;
+        }
+        if (!confirm("确定删除吗?")) {
+            return;
+        }
+        var array = []
+        $.each(data, function () {
+            array.push(this.id)
+        })
+
+        $.ajax('dicValue/removeBatch', {
+            type: 'post',
+            data: {
+                _method: "delete",
+                ids: array.join()
+            },
+            success: function (res) {
+                alert(res.message)
+                if (res.code == 200) {
+                    $("#tab").bootstrapTable('refresh')
+                }
+            }
+        })
+    }
+
+</script>
+</body>
+</html>

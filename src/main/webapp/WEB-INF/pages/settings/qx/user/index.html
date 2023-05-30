@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <base th:href="${#request.getContextPath()} + '/'">
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="static/bootstrap/css/bootstrap.min.css">
+    <!--bootstrapTable核心样式-->
+    <link rel="stylesheet" href="static/bootstrap-table/bootstrap-table.min.css">
+    <!--bootstrapDatetimepick核心样式-->
+    <link rel="stylesheet" href="static/bootstrap-datetimepicker/css/bootstrap-datetimepicker.min.css">
+</head>
+<body>
+<!--路径导航-->
+<ol class="breadcrumb">
+    <li>设置</li>
+    <li>权限</li>
+    <li class="active">用户</li>
+</ol>
+<div class="panel-body">
+    <!--查询条件-->
+    <div class="well well-sm">
+        <form id="searchForm" class="form-inline">
+            <div class="row" style="margin-bottom: 15px;">
+                <div class="form-group col-md-4">
+                    <label>用户姓名</label>
+                    <input type="text" id="name" class="form-control">
+                </div>
+                <div class="form-group col-md-4">
+                    <label>部门名称</label>
+                    <input type="text" id="deptNo" class="form-control">
+                </div>
+                <div class="form-group col-md-4">
+                    <label>锁定状态</label>
+                    <select id="lockState" class="form-control lockState">
+                        <option value=""></option>
+                        <option value="1">启用</option>
+                        <option value="0">锁定</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group col-md-4">
+                    <label>开始时间</label>
+                    <div class="input-group date myDatetime">
+                        <input type="text" id="startTime" class="form-control" readonly>
+                        <span class="input-group-addon"><span class="glyphicon glyphicon-remove"></span></span>
+                    </div>
+                </div>
+                <div class="form-group col-md-4">
+                    <label>结束时间</label>
+                    <div class="input-group date myDatetime">
+                        <input type="text" id="endTime" class="form-control" readonly>
+                        <span class="input-group-addon"><span class="glyphicon glyphicon-remove"></span></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <button type="button" class="btn btn-default" onclick="$('#tab').bootstrapTable('refresh');">搜索</button>
+                    <button type="button" class="btn btn-default" onclick="$('#searchForm')[0].reset();$('#tab').bootstrapTable('refresh');">清空</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div id="toolbar">
+        <button type="button" class="btn btn-primary" onclick="$('#saveModal').modal('show');">
+            <span class="glyphicon glyphicon-plus"></span> 新增
+        </button>
+        <button type="button" class="btn btn-danger" onclick="removeBatch()">
+            <span class="glyphicon glyphicon-trash"></span> 批量删除
+        </button>
+    </div>
+    <table id="tab" class="table table-hover table-striped table-bordered"></table>
+</div>
+
+<!--创建用户的模态窗口-->
+<div class="modal fade" id="saveModal">
+    <div class="modal-dialog" role="document" style="width: 90%;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span aria-hidden="true">×</span>
+                </button>
+                <h4 class="modal-title" id="myModalLabel">新增用户</h4>
+            </div>
+            <div class="modal-body">
+                <form class="form-horizontal" id="saveForm">
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">登录帐号<span style="font-size: 15px; color: red;">*</span></label>
+                        <div class="col-sm-10" style="width: 300px;">
+                            <input type="text" class="form-control" id="save-loginAct">
+                        </div>
+                        <label class="col-sm-2 control-label">用户姓名<span style="font-size: 15px; color: red;">*</span></label>
+                        <div class="col-sm-10" style="width: 300px;">
+                            <input type="text" class="form-control" id="save-name">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">登录密码<span style="font-size: 15px; color: red;">*</span></label>
+                        <div class="col-sm-10" style="width: 300px;">
+                            <input type="password" class="form-control" id="save-loginPwd">
+                        </div>
+                        <label class="col-sm-2 control-label">确认密码<span style="font-size: 15px; color: red;">*</span></label>
+                        <div class="col-sm-10" style="width: 300px;">
+                            <input type="password" class="form-control" id="save-confirmPwd">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">邮箱</label>
+                        <div class="col-sm-10" style="width: 300px;">
+                            <input type="text" class="form-control" id="save-email">
+                        </div>
+                        <label class="col-sm-2 control-label">失效时间</label>
+                        <div class="col-sm-10" style="width: 300px;">
+<!--                            <input type="text" class="form-control" id="save-expireTime">-->
+                            <div class="input-group date myDatetime">
+                                <input type="text" id="save-expireTime" class="form-control" readonly>
+                                <span class="input-group-addon"><span class="glyphicon glyphicon-remove"></span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">锁定状态<span style="font-size: 15px; color: red;">*</span></label>
+                        <div class="col-sm-10" style="width: 300px;">
+                            <select class="form-control lockState" id="save-lockState">
+                                <option value=""></option>
+                                <option value="1">启用</option>
+                                <option value="0">锁定</option>
+                            </select>
+                        </div>
+                        <label class="col-sm-2 control-label">部门</label>
+                        <div class="col-sm-10" style="width: 300px;">
+                            <input type="text" class="form-control" id="save-deptNo">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">允许访问的IP</label>
+                        <div class="col-sm-10" style="width: 300px;">
+                            <input type="text" class="form-control" id="save-allowIps" style="width: 280%" placeholder="多个用逗号隔开">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" onclick="save()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!--修改用户模态框-->
+<div class="modal fade" id="editModal">
+    <div class="modal-dialog" role="document" style="width: 90%;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span aria-hidden="true">×</span>
+                </button>
+                <h4 class="modal-title">编辑用户</h4>
+            </div>
+            <div class="modal-body">
+                <form class="form-horizontal" id="editForm">
+                    <input type="hidden" id="edit-id">
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">登录帐号<span style="font-size: 15px; color: red;">*</span></label>
+                        <div class="col-sm-10" style="width: 300px;">
+                            <input type="text" class="form-control" id="edit-loginAct" readonly>
+                        </div>
+                        <label class="col-sm-2 control-label">用户姓名<span style="font-size: 15px; color: red;">*</span></label>
+                        <div class="col-sm-10" style="width: 300px;">
+                            <input type="text" class="form-control" id="edit-name">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">邮箱</label>
+                        <div class="col-sm-10" style="width: 300px;">
+                            <input type="text" class="form-control" id="edit-email">
+                        </div>
+                        <label class="col-sm-2 control-label">失效时间</label>
+                        <div class="col-sm-10" style="width: 300px;">
+<!--                            <input type="text" class="form-control" id="edit-expireTime">-->
+                            <div class="input-group date myDatetime">
+                                <input type="text" id="edit-expireTime" class="form-control" readonly>
+                                <span class="input-group-addon"><span class="glyphicon glyphicon-remove"></span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">锁定状态<span style="font-size: 15px; color: red;">*</span></label>
+                        <div class="col-sm-10" style="width: 300px;">
+                            <select class="form-control lockState" id="edit-lockState">
+                                <option value=""></option>
+                                <option value="1">启用</option>
+                                <option value="0">锁定</option>
+                            </select>
+                        </div>
+                        <label class="col-sm-2 control-label">部门</label>
+                        <div class="col-sm-10" style="width: 300px;">
+                            <input type="text" class="form-control" id="edit-deptNo">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">允许访问的IP</label>
+                        <div class="col-sm-10" style="width: 300px;">
+                            <input type="text" class="form-control" id="edit-allowIps" style="width: 280%" placeholder="多个用逗号隔开">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" onclick="edit()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="static/js/jquery.js"></script>
+<script type="text/javascript" src="static/bootstrap/js/bootstrap.min.js"></script>
+<!--bootstrapTable核心js-->
+<script type="text/javascript" src="static/bootstrap-table/bootstrap-table.min.js"></script>
+<!--bootstrapTable中文语言包-->
+<script type="text/javascript" src="static/bootstrap-table/locale/bootstrap-table-zh-CN.min.js"></script>
+<!--bootstrapDatetimepicker核心js-->
+<script type="text/javascript" src="static/bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js"></script>
+<!--bootstrapDatetimepicker中文语言包-->
+<script type="text/javascript" src="static/bootstrap-datetimepicker/js/locales/bootstrap-datetimepicker.zh-CN.js"></script>
+<script>
+    $(function () {
+        initTable();
+
+        //日期组件的配置
+        $('.myDatetime').datetimepicker({
+            //语言
+            language: 'zh-CN',
+            //日期格式
+            format: 'yyyy-mm-dd hh:ii:ss',
+            //周起始
+            weekStart: 1,
+            //选择日期后自动关闭
+            autoclose: true,
+            //默认打开日期界面
+            startView: 'month',
+            todayBtn: true,
+            forceParse: false
+        });
+
+    })
+
+    function initTable(){
+        $('#tab').bootstrapTable({
+            method: 'get',
+            url: 'user/page',
+            responseHandler: function (res){
+                console.log(res)
+                if(res.code == 200){
+                    let dicValueList = res.data.dicValueList;
+                    var op = '<option></option>'
+                    for (let i = 0; i < dicValueList.length; i++) {
+                        op += '<option value="' + dicValueList[i].value + '">' + dicValueList[i].text + '</option>'
+                    }
+                    $(".lockState").html(op)
+                    return {
+                        rows: res.data.list,
+                        total: res.data.total
+                    }
+                }
+                return [];
+            },
+            pagination: true,
+            sidePagination: 'server',
+            pageSize: 5,
+            pageList: [5, 10, 20, 50],
+            paginationPreText: '上一页',
+            paginationNextText: '下一页',
+            //查询参数配置
+            queryParamsType: '',
+            queryParams: function (params){
+                params.name = $('#name').val();
+                params.deptNo = $('#deptNo').val();
+                params.lockState = $('#lockState').val();
+                params.startTime = $('#startTime').val();
+                params.endTime = $('#endTime').val();
+                return params;
+            },
+            clickToSelect: true,
+            showRefresh: true,
+            showToggle: true,
+            showFullscreen: true,
+            toolbar: '#toolbar',
+            columns: [
+                {checkbox: true},
+                {field:'id',visible:false},
+                {title:'登录账号',field:'loginAct',halign:'center'},
+                {title:'用户姓名',field:'name',halign:'center'},
+                {title:'部门名称',field:'deptNo',halign:'center'},
+                {title:'邮箱',field:'email',halign:'center'},
+                {title:'失效时间',field:'expireTime',halign:'center'},
+                {title:'允许访问IP',field:'allowIps',halign:'center'},
+                {title:'锁定状态',field:'lockState',halign:'center',formatter: function (value, row){
+                        return value
+                    }},
+                {title:'操作',halign:'center',align:'center',formatter:function (value, row){
+                        return '<button type="button" class="btn btn-warning btn-xs" onclick="get(\'' + row.id + '\')" title="编辑"><span class="glyphicon glyphicon-edit"></span></button>&emsp;' +
+                            '<button type="button" class="btn btn-danger btn-xs" onclick="remove(\'' + row.id + '\')" title="删除"><span class="glyphicon glyphicon-trash"></span></button>';
+                    }}
+            ]
+        });
+    }
+
+    function save() {
+        if (!$("#save-loginAct").val()){
+            alert("账号不能为空!")
+            return
+        }
+        if (!$("#save-name").val()){
+            alert("姓名不能为空!")
+            return
+        }
+        if (!$("#save-loginPwd").val()){
+            alert("登录密码不能为空!")
+            return
+        }
+        if (!$("#save-confirmPwd").val()){
+            alert("确认密码不能为空!")
+            return
+        }
+        if ($("#save-confirmPwd").val() != $("#save-loginPwd").val()){
+            alert("两次密码不一致!")
+            return
+        }
+        if(!lockState){
+            alert('请选择锁定状态');
+            return false;
+        }
+
+        $.ajax('user/save',{
+            type: 'post',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                loginAct: $("#save-loginAct").val(),
+                name: $("#save-name").val(),
+                loginPwd: $("#save-loginPwd").val(),
+                email: $("#save-email").val(),
+                expireTime: $("#save-expireTime").val(),
+                lockState: $("#save-lockState").val(),
+                deptNo: $("#save-deptNo").val(),
+                allowIps: $("#save-allowIps").val(),
+            }),
+            success: function (res) {
+                alert(res.message)
+                if (res.code == 200){
+                    $("#saveModal").modal('hide')
+                    $("#tab").bootstrapTable('refresh')
+                }
+            }
+        })
+    }
+
+    function get(id) {
+        $.ajax('user/get/' + id,{
+            type: 'get',
+            success: function (res){
+                $("#edit-id").val(res.data.id)
+                $("#edit-loginAct").val(res.data.loginAct)
+                $("#edit-name").val(res.data.name)
+                $("#edit-email").val(res.data.email)
+                $("#edit-expireTime").val(res.data.expireTime)
+                $("#edit-lockState").val(res.data.lockState)
+                $("#edit-deptNo").val(res.data.deptNo)
+                $("#edit-allowIps").val(res.data.allowIps)
+
+                $("#editModal").modal('show')
+            }
+        })
+    }
+
+    function edit() {
+        if (!$("#edit-name").val()){
+            alert("姓名不能为空!")
+            return
+        }
+        if(!$("#edit-lockState").val()){
+            alert('请选择锁定状态');
+            return false;
+        }
+        $.ajax('user/edit',{
+            type: 'put',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                id: $("#edit-id").val(),
+                name: $("#edit-name").val(),
+                email: $("#edit-email").val(),
+                expireTime: $("#edit-expireTime").val(),
+                lockState: $("#edit-lockState").val(),
+                deptNo: $("#edit-deptNo").val(),
+                allowIps: $("#edit-allowIps").val(),
+            }),
+            success: function (res) {
+                if (res.code == 200){
+                    alert(res.message)
+                    $("#editModal").modal('hide')
+                    $("#tab").bootstrapTable('refresh')
+                }
+            }
+        })
+    }
+
+    function remove(id) {
+        if (!confirm("确定删除吗?")){
+            return
+        }
+        $.ajax('user/remove/' + id ,{
+            type: 'delete',
+            success: function (res) {
+                if (res.code == 200){
+                    alert("删除成功!")
+                    $("#tab").bootstrapTable('refresh')
+                }
+            }
+        })
+    }
+
+    function removeBatch() {
+        var rows = $("#tab").bootstrapTable('getSelections')
+        if (rows.length == 0){
+            alert("请选择要删除的数据!")
+            return
+        }
+        if (!confirm("确定删除吗?")){
+            return
+        }
+        var array = []
+        $.each(rows, function () {
+            array.push(this.id)
+        })
+
+        $.ajax('user/removeBatch', {
+            type: 'post',
+            data: {
+                _method: 'delete',
+                ids: array.join()
+            },
+            success: function (res){
+                if (res.code == 200){
+                    alert(res.message)
+                    $("#tab").bootstrapTable('refresh')
+                }
+            }
+        })
+    }
+    /*日期组件*/
+    /*$('.myDatetime').datetimepicker({
+
+    })*/
+
+</script>
+</body>
+</html>

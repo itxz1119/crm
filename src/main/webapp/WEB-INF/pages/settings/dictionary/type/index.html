@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<base th:href="${#request.getContextPath()} + '/'">
+	<meta charset="UTF-8">
+	<link rel="stylesheet" href="static/bootstrap/css/bootstrap.min.css">
+	<!--bootstrapTable核心样式-->
+	<link rel="stylesheet" href="static/bootstrap-table/bootstrap-table.min.css">
+</head>
+<body>
+<!--路径导航-->
+<ol class="breadcrumb">
+	<li>设置</li>
+	<li>字典类型列表</li>
+
+</ol>
+<div class="panel-body">
+	<!--查询条件-->
+	<form id="searchForm" class="form-inline">
+		<div class="form-group">
+			<input type="text" placeholder="字典名称" id="name" class="form-control">
+		</div>
+		<div class="form-group">
+			<button type="button" class="btn btn-default" onclick="$('#tab').bootstrapTable('refresh');">搜索</button>
+			<button type="button" class="btn btn-default"
+					onclick="$('#searchForm')[0].reset();$('#tab').bootstrapTable('refresh');">清空
+			</button>
+		</div>
+		<div class="form-group">
+			<button type="button" class="btn btn-primary" onclick="$('#saveModal').modal('show');">新增</button>
+			<button type="button" class="btn btn-danger" onclick="removeBatch()">批量删除</button>
+		</div>
+	</form>
+
+	<table id="tab" class="table table-hover table-striped table-bordered"></table>
+</div>
+
+<!--创建用户的模态窗口-->
+<div class="modal fade" id="saveModal">
+	<div class="modal-dialog" role="document" style="width: 90%;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">
+					<span aria-hidden="true">×</span>
+				</button>
+				<h4 class="modal-title" id="myModalLabel">新增字典类型</h4>
+			</div>
+			<div class="modal-body">
+				<form class="form-horizontal" id="saveForm">
+					<div class="form-group">
+						<label class="col-sm-2 control-label">编码<span style="font-size: 15px; color: red;">*</span></label>
+						<div class="col-sm-10" style="width: 300px;">
+							<input type="text" class="form-control" id="save-code" >
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-2 control-label">名称<span style="font-size: 15px; color: red;">*</span></label>
+						<div class="col-sm-10" style="width: 300px;">
+							<input type="text" class="form-control" id="save-name">
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-2 control-label">描述</label>
+						<div class="col-sm-10" style="width: 300px;">
+							<input type="text" class="form-control" id="save-description">
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+				<button type="button" class="btn btn-primary" onclick="save()">保存</button>
+			</div>
+		</div>
+	</div>
+</div>
+<!--修改用户模态框-->
+<div class="modal fade" id="editModal">
+	<div class="modal-dialog" role="document" style="width: 90%;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">
+					<span aria-hidden="true">×</span>
+				</button>
+				<h4 class="modal-title">编辑用户</h4>
+			</div>
+			<div class="modal-body">
+				<form class="form-horizontal" id="editForm">
+					<div class="form-group">
+						<label class="col-sm-2 control-label">编码<span style="font-size: 15px; color: red;">*</span></label>
+						<div class="col-sm-10" style="width: 300px;">
+							<input type="text" class="form-control" id="edit-code" readonly>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-2 control-label">名称<span style="font-size: 15px; color: red;">*</span></label>
+						<div class="col-sm-10" style="width: 300px;">
+							<input type="text" class="form-control" id="edit-name">
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-2 control-label">描述</label>
+						<div class="col-sm-10" style="width: 300px;">
+							<input type="text" class="form-control" id="edit-description">
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+				<button type="button" class="btn btn-primary" onclick="edit()">保存</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript" src="static/js/jquery.js"></script>
+<script type="text/javascript" src="static/bootstrap/js/bootstrap.min.js"></script>
+<!--bootstrapTable核心js-->
+<script type="text/javascript" src="static/bootstrap-table/bootstrap-table.min.js"></script>
+<!--bootstrapTable中文语言包-->
+<script type="text/javascript" src="static/bootstrap-table/locale/bootstrap-table-zh-CN.min.js"></script>
+<!--日期组件-->
+<script type="text/javascript" src="static/bootstrap-datetimepicker/locales/bootstrap-datetimepicker.zh-CN.js"></script>
+<script type="text/javascript" src="static/bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js"></script>
+<script>
+	$(function () {
+		initTable();
+	})
+
+	function initTable(){
+		$('#tab').bootstrapTable({
+			method: 'get',
+			url: 'dicType/page',
+			responseHandler: function (res){
+				if(res.code == 200){
+					return {
+						rows: res.data.list,
+						total: res.data.total
+					}
+				}
+				return [];
+			},
+			pagination: true,
+			sidePagination: 'server',
+			pageSize: 5,
+			pageList: [5, 10, 20, 50],
+			paginationPreText: '上一页',
+			paginationNextText: '下一页',
+			//查询参数配置
+			queryParamsType: '',
+			queryParams: function (params){
+				params.name = $('#name').val();
+				return params;
+			},
+			clickToSelect: true,
+			showRefresh: true,
+			showToggle: true,
+			showFullscreen: true,
+			toolbar: '#searchForm',
+			columns: [
+				{checkbox: true},
+				{title:'编码',field:'code',halign:'center'},
+				{title:'名称',field:'name',halign:'center'},
+				{title:'描述',field:'description',halign:'center'},
+				{title:'操作',halign:'center',align:'center',formatter:function (value, row){
+						return '<button type="button" class="btn btn-warning btn-xs" onclick="get(\'' + row.code + '\')" title="编辑"><span class="glyphicon glyphicon-edit"></span></button>&emsp;' +
+								'<button type="button" class="btn btn-danger btn-xs" onclick="remove(\'' + row.code + '\')" title="删除"><span class="glyphicon glyphicon-trash"></span></button>';
+					}}
+			]
+		});
+	}
+
+	function save() {
+		let code = $("#save-code").val()
+		let name = $("#save-name").val()
+		let description = $("#save-description").val()
+
+		if (!code){
+			alert("编码不能为空!")
+			return
+		}
+		if (!name){
+			alert("名称不能为空!")
+			return;
+		}
+
+		$.ajax('dicType/save',{
+			type: 'post',
+			contentType: 'application/json',
+			data: JSON.stringify({
+				"code": code,
+				"name": name,
+				"description": description
+			}),
+			success: function (res){
+				alert(res.message)
+				if (res.code == 200){
+					$("#saveModal").modal('hide')
+					$("#tab").bootstrapTable('refresh')
+				}
+			}
+		})
+	}
+
+	function get(code) {
+		$.getJSON('dicType/get/' + code, function (res) {
+			$("#edit-code").val(res.data.code)
+			$("#edit-name").val(res.data.name)
+			$("#edit-description").val(res.data.description)
+			$("#editModal").modal('show')
+		})
+	}
+
+	function edit() {
+		let code = $("#edit-code").val()
+		let name = $("#edit-name").val()
+		let description = $("#edit-description").val()
+		if (!name){
+			alert("名称不能为空!")
+			return;
+		}
+
+		$.ajax('dicType/update',{
+			type: 'put',
+			contentType: 'application/json',
+			data: JSON.stringify({
+				code: code,
+				name: name,
+				description: description
+			}),
+			success: function (res) {
+				alert(res.message)
+				if (res.code == 200){
+					$("#editModal").modal('hide')
+					$("#tab").bootstrapTable('refresh')
+				}
+			}
+		})
+	}
+
+	function remove(code) {
+		if (!confirm("确定删除吗?")){
+			return
+		}
+		$.ajax('dicType/remove/' + code, {
+			type:'delete',
+			success: function (res) {
+				alert(res.message)
+				if (res.code == 200){
+					$("#tab").bootstrapTable('refresh')
+				}
+			}
+		})
+	}
+
+	function removeBatch() {
+		let data = $("#tab").bootstrapTable('getSelections')
+		if (data.length === 0){
+			alert('请选择要删除的数据')
+			return;
+		}
+		if (!confirm("确定删除吗?")){
+			return;
+		}
+		var array = []
+		$.each(data, function () {
+			array.push(this.code)
+		})
+
+		$.ajax('dicType/removeBatch', {
+			type: 'post',
+			data: {
+				_method: "delete",
+				codes: array.join()
+			},
+			success: function (res) {
+				alert(res.message)
+				if (res.code == 200){
+					$("#tab").bootstrapTable('refresh')
+				}
+			}
+		})
+	}
+
+</script>
+</body>
+</html>

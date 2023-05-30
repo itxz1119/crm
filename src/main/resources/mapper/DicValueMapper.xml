@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.bjpowernode.crm.settings.mapper.DicValueMapper">
+
+    <resultMap id="baseMap" type="dicValue">
+        <id column="id" property="id"/>
+        <result column="value" property="value"/>
+        <result column="text" property="text"/>
+        <result column="order_no" property="orderNo"/>
+        <result column="type_code" property="typeCode"/>
+        <result column="name" property="name"/>
+    </resultMap>
+
+    <select id="selectByCodeAndValue" resultMap="baseMap">
+        select
+            id, value, text, order_no, type_code
+        from tbl_dic_value
+        where type_code = #{typeCode} and value = #{value}
+    </select>
+
+    <select id="selectByCode" resultMap="baseMap">
+        select id, value, text, order_no, type_code from tbl_dic_value
+        where type_code = #{typeCode}
+    </select>
+
+    <select id="selectById" resultMap="baseMap" >
+        select id, value, text, order_no, type_code
+        from tbl_dic_value
+        where id = #{id}
+    </select>
+
+    <select id="select" resultMap="baseMap">
+        select
+        v.id, v.value, v.text, v.order_no, v.type_code, t.name
+        from tbl_dic_value v join tbl_dic_type t
+        on v.type_code = t.code
+        <where>
+            <if test="typeCode != null and typeCode != ''">
+                and v.type_code = #{typeCode}
+            </if>
+            <if test="text != null and text != ''">
+                and v.text like '%' #{text} '%'
+            </if>
+        </where>
+        order by v.type_code,v.order_no
+    </select>
+
+
+
+    <!--新增所有列-->
+    <insert id="insert" parameterType="com.bjpowernode.crm.settings.entity.DicValue">
+        insert into tbl_dic_value(id, value, text, order_no, type_code)
+        values (#{id}, #{value}, #{text}, #{orderNo}, #{typeCode})
+    </insert>
+
+
+    <update id="update">
+        update tbl_dic_value
+        <set>
+            <if test="value != null and value != ''">
+                value = #{value},
+            </if>
+            <if test="text != null and text != ''">
+                text = #{text},
+            </if>
+            <if test="typeCode != null and typeCode != ''">
+                type_code = #{typeCode},
+            </if>
+            <if test="orderNo != null and orderNo != ''">
+                order_no = #{orderNo},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteById">
+        delete
+        from tbl_dic_value
+        where id = #{id}
+    </delete>
+
+    <delete id="deleteBatch">
+        delete from tbl_dic_value where id in
+        <foreach collection="array" open="(" close=")" separator="," item="id">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>
